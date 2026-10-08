@@ -1,0 +1,12 @@
+{
+  "name": "glassscope-immercom",
+  "private": true,
+  "description": "Project page for GlassScope (ImmerCom '26). Static site; Node is only needed to run the browser tests.",
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}

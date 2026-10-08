@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GlassScope: An Open-Source Measurement Layer for AI-Glass Live Streaming</title>
+  <meta name="description"
+        content="GlassScope is an open-source measurement layer for AI-glass live streaming. It joins backend events, MediaMTX readiness, and player behavior into one per-trial timeline. ImmerCom ’26.">
+  <meta name="keywords" content="GlassScope, AI glasses, live streaming, latency measurement, MediaMTX, HLS, RTMP, MentraOS">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="GlassScope: An Open-Source Measurement Layer for AI-Glass Live Streaming">
+  <meta property="og:description" content="See where the delay happens: per-stage timing for AI-glass live streaming. ImmerCom ’26.">
+  <!-- Absolute URLs: link previews and search engines require them. Intended home: https://glassscope-immercom.github.io/ -->
+  <link rel="canonical" href="https://glassscope-immercom.github.io/">
+  <meta property="og:url" content="https://glassscope-immercom.github.io/">
+  <meta property="og:image" content="https://glassscope-immercom.github.io/static/images/glassscope-architecture.png">
+  <meta property="og:image:alt" content="GlassScope workflow architecture (Figure 2 of the paper).">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ffffff">
+
+  <script>document.documentElement.classList.replace('no-js', 'js');</script>
+
+  <link rel="preload" href="./static/fonts/google-sans-flex-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./static/fonts/noto-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg" type="image/svg+xml">
+
+  <script defer src="./static/js/index.js"></script>
+</head>
+<body>
+
+<a class="gs-skip-link" href="#main">Skip to content</a>
+
+<!-- Icon sprite. Stage icons are original; file-pdf, github, database, book and copy are
+     Font Awesome Free 5.15.1 (https://fontawesome.com/license/free, icons CC BY 4.0). -->
+<svg class="gs-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <symbol id="i-glasses" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="6.5" cy="13.5" r="3.5"/><circle cx="17.5" cy="13.5" r="3.5"/>
+    <path d="M10 13c1.3-1.2 2.7-1.2 4 0M3 13.5 1.6 9.5M21 13.5l1.4-4"/>
+  </symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="6.5" y="2.5" width="11" height="19" rx="2.2"/><path d="M10.5 18.5h3"/>
+  </symbol>
+  <symbol id="i-backend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 18.5h10.2a4 4 0 0 0 .4-8 6 6 0 0 0-11.4-1.2A4.6 4.6 0 0 0 7 18.5Z"/><path d="M10 15.5v-4m0 0-1.5 1.5M10 11.5l1.5 1.5M14 11.5v4m0 0-1.5-1.5M14 15.5l1.5-1.5"/>
+  </symbol>
+  <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.5" y="3.5" width="17" height="5" rx="1.2"/><rect x="3.5" y="9.5" width="17" height="5" rx="1.2"/><rect x="3.5" y="15.5" width="17" height="5" rx="1.2"/>
+    <path d="M7 6h.01M7 12h.01M7 18h.01"/>
+  </symbol>
+  <symbol id="i-viewer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.5" y="3.5" width="19" height="13" rx="1.6"/><path d="M8.5 20.5h7M12 16.5v4"/><path d="m10.3 7.6 4 2.4-4 2.4Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m3.5 8.5 3 3 6-7"/>
+  </symbol>
+  <symbol id="i-file-pdf" viewBox="0 0 384 512"><path fill="currentColor" d="M181.9 256.1c-5-16-4.9-46.9-2-46.9 8.4 0 7.6 36.9 2 46.9zm-1.7 47.2c-7.7 20.2-17.3 43.3-28.4 62.7 18.3-7 39-17.2 62.9-21.9-12.7-9.6-24.9-23.4-34.5-40.8zM86.1 428.1c0 .8 13.2-5.4 34.9-40.2-6.7 6.3-29.1 24.5-34.9 40.2zM248 160h136v328c0 13.3-10.7 24-24 24H24c-13.3 0-24-10.7-24-24V24C0 10.7 10.7 0 24 0h200v136c0 13.2 10.8 24 24 24zm-8 171.8c-20-12.2-33.3-29-42.7-53.8 4.5-18.5 11.6-46.6 6.2-64.2-4.7-29.4-42.4-26.5-47.8-6.8-5 18.3-.4 44.1 8.1 77-11.6 27.6-28.7 64.6-40.8 85.8-.1 0-.1.1-.2.1-27.1 13.9-73.6 44.5-54.5 68 5.6 6.9 16 10 21.5 10 17.9 0 35.7-18 61.1-61.8 25.8-8.5 54.1-19.1 79-23.2 21.7 11.8 47.1 19.5 64 19.5 29.2 0 31.2-32 19.7-43.4-13.9-13.6-54.3-9.7-73.6-7.2zM377 105L279 7c-4.5-4.5-10.6-7-17-7h-6v128h128v-6.1c0-6.3-2.5-12.4-7-16.9zm-74.1 255.3c4.1-2.7-2.5-11.9-42.8-9 37.1 15.8 42.8 9 42.8 9z"/></symbol>
+  <symbol id="i-github" viewBox="0 0 496 512"><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></symbol>
+  <symbol id="i-database" viewBox="0 0 448 512"><path fill="currentColor" d="M448 73.143v45.714C448 159.143 347.667 192 224 192S0 159.143 0 118.857V73.143C0 32.857 100.333 0 224 0s224 32.857 224 73.143zM448 176v102.857C448 319.143 347.667 352 224 352S0 319.143 0 278.857V176c48.125 33.143 136.208 48.572 224 48.572S399.874 209.143 448 176zm0 160v102.857C448 479.143 347.667 512 224 512S0 479.143 0 438.857V336c48.125 33.143 136.208 48.572 224 48.572S399.874 369.143 448 336z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 448 512"><path fill="currentColor" d="M448 360V24c0-13.3-10.7-24-24-24H96C43 0 0 43 0 96v320c0 53 43 96 96 96h328c13.3 0 24-10.7 24-24v-16c0-7.5-3.5-14.3-8.9-18.7-4.2-15.4-4.2-59.3 0-74.7 5.4-4.3 8.9-11.1 8.9-18.6zM128 134c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm0 64c0-3.3 2.7-6 6-6h212c3.3 0 6 2.7 6 6v20c0 3.3-2.7 6-6 6H134c-3.3 0-6-2.7-6-6v-20zm253.4 250H96c-17.7 0-32-14.3-32-32 0-17.6 14.4-32 32-32h285.4c-1.9 17.1-1.9 46.9 0 64z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 448 512"><path fill="currentColor" d="M320 448v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24V120c0-13.255 10.745-24 24-24h72v296c0 30.879 25.121 56 56 56h168zm0-344V0H152c-13.255 0-24 10.745-24 24v368c0 13.255 10.745 24 24 24h272c13.255 0 24-10.745 24-24V128H344c-13.2 0-24-10.8-24-24zm120.971-31.029L375.029 7.029A24 24 0 0 0 358.059 0H352v96h96v-6.059a24 24 0 0 0-7.029-16.97z"/></symbol>
+</svg>
+
+<header class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="has-text-centered">
+        <h1 class="title is-1 publication-title">GlassScope: An <span class="gs-nowrap">Open-Source</span> Measurement Layer for <span class="gs-nowrap">AI-Glass</span> Live Streaming</h1>
+        <p class="is-size-5 publication-authors">
+          <span class="author-block">Raoa Faria Karim<sup>1</sup>,</span>
+          <span class="author-block">John Cobio<sup>1</sup>,</span>
+          <span class="author-block">Songling Bai<sup>1</sup>,</span>
+          <span class="author-block">Wei Li<sup>2</sup>,</span>
+          <span class="author-block">Yingshu Li<sup>2</sup>,</span>
+          <span class="author-block">Ming Li<sup>1</sup></span>
+        </p>
+        <p class="is-size-5 publication-authors publication-affiliations">
+          <span class="author-block"><sup>1</sup>The University of Texas at Arlington,</span>
+          <span class="author-block"><sup>2</sup>Georgia State University</span>
+        </p>
+        <p class="publication-venue">ImmerCom ’26</p>
+
+        <nav class="publication-links" aria-label="Paper resources">
+          <!-- Paper button: uncomment once https://doi.org/10.1145/3842656.3843829 resolves.
+          <span class="link-block">
+            <a href="https://doi.org/10.1145/3842656.3843829" class="button is-normal is-rounded is-dark">
+              <span class="icon"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-file-pdf"></use></svg></span>
+              <span>Paper</span>
+            </a>
+          </span>
+          -->
+          <span class="link-block">
+            <a href="https://github.com/raoafariak-sys/GlassScope" class="button is-normal is-rounded is-dark">
+              <span class="icon"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-github"></use></svg></span>
+              <span>Code</span>
+            </a>
+          </span>
+          <span class="link-block">
+            <a href="https://github.com/raoafariak-sys/GlassScope/tree/main/evaluation_logs" class="button is-normal is-rounded is-dark">
+              <span class="icon"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-database"></use></svg></span>
+              <span>Evaluation Logs</span>
+            </a>
+          </span>
+          <span class="link-block">
+            <a href="https://github.com/raoafariak-sys/GlassScope/blob/main/STARTUP_GUIDE_BYPASS.txt" class="button is-normal is-rounded is-dark">
+              <span class="icon"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"></use></svg></span>
+              <span>Setup Guide</span>
+            </a>
+          </span>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Visual overview (adapted from Figure 1). -->
+  <section class="section gs-overview" aria-labelledby="overview-title">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered" id="overview-title">See where the delay happens</h2>
+      <figure class="gs-figure">
+        <div class="gs-ov">
+          <ol class="gs-ov-stages" role="list" aria-label="AI-glass live-streaming pipeline">
+            <li><svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-glasses"></use></svg><span>Smart Glasses</span></li>
+            <li><svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-phone"></use></svg><span>Phone App</span></li>
+            <li><svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-backend"></use></svg><span>Backend Relay</span></li>
+            <li><svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-server"></use></svg><span>Media Server</span></li>
+            <li><svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-viewer"></use></svg><span>Viewer</span></li>
+          </ol>
+
+          <div class="gs-ov-row">
+            <p class="gs-ov-label" id="ov-original">Original MentraOS</p>
+            <ul class="gs-ov-original" role="list" aria-labelledby="ov-original">
+              <li class="gs-ov-chip"><svg class="gs-check" aria-hidden="true" focusable="false"><use href="#i-check"></use></svg>App code</li>
+              <li class="gs-ov-chip"><svg class="gs-check" aria-hidden="true" focusable="false"><use href="#i-check"></use></svg>SDK callbacks</li>
+              <li class="gs-ov-chip"><svg class="gs-check" aria-hidden="true" focusable="false"><use href="#i-check"></use></svg>Destination config</li>
+              <li class="gs-ov-hidden">Timing remains hidden across the downstream path</li>
+            </ul>
+          </div>
+
+          <div class="gs-ov-row">
+            <p class="gs-ov-label gs-ov-label--glassscope" id="ov-glassscope">GlassScope</p>
+            <div class="gs-ov-timeline">
+              <ol class="gs-ov-events" role="list" aria-labelledby="ov-glassscope">
+                <li>Start command</li>
+                <li>SDK-active observed</li>
+                <li>Backend receive</li>
+                <li>Backend forward</li>
+                <li>MediaMTX readyTime</li>
+                <li>Viewer attach</li>
+                <li>First decoded frame</li>
+              </ol>
+              <p class="gs-ov-logs"><span aria-hidden="true">↓</span> Structured, timestamped logs</p>
+            </div>
+          </div>
+        </div>
+        <figcaption class="gs-caption">
+          GlassScope connects backend events, media-server readiness, and player behavior into one measurement timeline.
+          In the original workflow a vendor backend relays the stream; in GlassScope runs, the local backend handles
+          stream control while MediaMTX ingests the video, as the pipeline below shows.
+          <span class="gs-caption-source">Redrawn from Figure 1 of the paper (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>).</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Abstract. -->
+  <section class="section gs-band" aria-labelledby="abstract-title">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3 has-text-centered" id="abstract-title">Abstract</h2>
+          <div class="content gs-prose">
+            <p>
+              AI-glass applications rely on timely video delivery to support real-time visual services. Hence, it is
+              crucial to measure and understand the latency of AI-glass live streaming. Existing open-source AI-glass
+              codebases do not provide the per-stage timing needed to determine where latency is introduced.
+            </p>
+            <p>
+              To bridge this gap, this paper presents GlassScope, an open-source measurement layer for AI-glass live
+              streaming. GlassScope instruments an existing open-source workflow by adding a protocol-compatible local
+              backend, a MediaMTX monitor, a player-side logger, and shared per-trial records. Across 90 clean sessions
+              and three streaming configurations, GlassScope exposes latency and playback behaviors that are hidden in
+              the original workflow. We release the measurement layer, log schema, and evaluation logs to support
+              reproducibility and broader community use.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive pipeline. -->
+  <section class="section" id="pipeline" aria-labelledby="pipeline-title">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered" id="pipeline-title">Explore the measurement pipeline</h2>
+      <p class="gs-lead has-text-centered">
+        <span class="gs-js-only">Select a stage to see its role and what GlassScope records there.</span>
+        <span class="gs-no-js-only">Each stage’s role and what GlassScope records there are listed below the diagram.</span>
+        Dashed lines carry control messages; solid lines carry video.
+      </p>
+
+      <div class="gs-pipeline">
+        <div class="gs-stages" data-stage-list>
+          <button type="button" class="gs-stage" id="tab-glasses" aria-controls="panel-glasses" data-stage disabled>
+            <svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-glasses"></use></svg>
+            <span class="gs-stage-name">Smart Glasses</span>
+            <span class="gs-stage-note">Firmware unchanged</span>
+          </button>
+          <button type="button" class="gs-stage" id="tab-phone" aria-controls="panel-phone" data-stage disabled>
+            <svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-phone"></use></svg>
+            <span class="gs-stage-name">Phone / SDK</span>
+            <span class="gs-stage-note">One environment variable</span>
+          </button>
+          <button type="button" class="gs-stage" id="tab-backend" aria-controls="panel-backend" data-stage data-initial disabled>
+            <svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-backend"></use></svg>
+            <span class="gs-stage-name">Local Backend</span>
+            <span class="gs-stage-note">Timestamps control events</span>
+          </button>
+          <button type="button" class="gs-stage" id="tab-mediamtx" aria-controls="panel-mediamtx" data-stage disabled>
+            <svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-server"></use></svg>
+            <span class="gs-stage-name">MediaMTX</span>
+            <span class="gs-stage-note">Polled every 2 s</span>
+          </button>
+          <button type="button" class="gs-stage" id="tab-viewer" aria-controls="panel-viewer" data-stage disabled>
+            <svg class="gs-icon" aria-hidden="true" focusable="false"><use href="#i-viewer"></use></svg>
+            <span class="gs-stage-name">Viewer</span>
+            <span class="gs-stage-note">Player-side logger</span>
+          </button>
+        </div>
+
+        <ul class="gs-lanes" role="list" aria-label="Paths between stages">
+          <li class="gs-lane gs-lane--control">
+            <span class="gs-lane-line" aria-hidden="true">
+              <span class="gs-node" style="--k: 1"></span><span class="gs-node" style="--k: 2"></span><span class="gs-node" style="--k: 3"></span>
+            </span>
+            <span class="gs-lane-text"><strong>Control:</strong> REST setup calls, then <code>start_stream</code>, keepalive, and status messages over WebSocket. The backend also polls the MediaMTX API every 2&nbsp;s.</span>
+          </li>
+          <li class="gs-lane gs-lane--media">
+            <span class="gs-lane-line" aria-hidden="true">
+              <span class="gs-node" style="--k: 1"></span><span class="gs-node" style="--k: 2"></span><span class="gs-node" style="--k: 4"></span><span class="gs-node" style="--k: 5"></span>
+            </span>
+            <span class="gs-lane-text"><strong>Video:</strong> published over RTMP from the glasses–phone side to MediaMTX (<code>live/stream</code>) at the URL sent in <code>start_stream</code>, then played over HLS or RTMP.</span>
+          </li>
+          <li class="gs-lane gs-lane--trial">
+            <span class="gs-lane-line" aria-hidden="true">
+              <span class="gs-node" style="--k: 1"></span><span class="gs-node" style="--k: 2"></span><span class="gs-node" style="--k: 3"></span>
+            </span>
+            <span class="gs-lane-text"><strong>Shared trial ID:</strong> backend, MediaMTX, and player records join into one timeline per trial.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="gs-panels">
+        <div class="gs-panel" id="panel-glasses">
+          <div class="gs-panel-main">
+            <h3 class="gs-panel-title" id="panel-glasses-title">Smart Glasses <span class="gs-tag">Unchanged</span></h3>
+            <p>The glasses capture the wearer’s surroundings and communicate with the companion phone app, which starts and manages the stream.</p>
+          </div>
+          <div class="gs-panel-records">
+            <h4 class="gs-panel-subtitle">What GlassScope records</h4>
+            <p>Nothing on the glasses themselves. The firmware stays unchanged and all measurement code runs outside the glasses and phone, so GlassScope observes the stream at the boundaries downstream.</p>
+          </div>
+        </div>
+
+        <div class="gs-panel" id="panel-phone">
+          <div class="gs-panel-main">
+            <h3 class="gs-panel-title" id="panel-phone-title">Phone / SDK <span class="gs-tag">One environment variable changed</span></h3>
+            <p>
+              The phone app starts and manages the stream through SDK callbacks. GlassScope’s only phone-side change is one
+              environment variable, <code>EXPO_PUBLIC_BACKEND_URL_OVERRIDE</code>, which points the app to the local backend.
+            </p>
+          </div>
+          <div class="gs-panel-records">
+            <h4 class="gs-panel-subtitle">What GlassScope records</h4>
+            <ul>
+              <li>The SDK stream-active notification, timestamped when it reaches the local backend.</li>
+              <li><strong>SDK startup:</strong> the time from the start-stream command to the observed stream-active notification.</li>
+            </ul>
+            <p class="gs-panel-note">Because the notification is timestamped on arrival, SDK startup can include phone-to-backend transport delay. It does not isolate processing inside the phone.</p>
+          </div>
+        </div>
+
+        <div class="gs-panel" id="panel-backend">
+          <div class="gs-panel-main">
+            <h3 class="gs-panel-title" id="panel-backend-title">Local Backend <span class="gs-tag gs-tag--added">Added by GlassScope</span></h3>
+            <p>
+              A protocol-compatible Python server (<code>server.py</code>, built on aiohttp) that the phone app reaches after the
+              URL override. Its REST and WebSocket endpoints set up, maintain, and end each stream.
+            </p>
+          </div>
+          <div class="gs-panel-records">
+            <h4 class="gs-panel-subtitle">What GlassScope records</h4>
+            <ul>
+              <li>When the start-stream command is sent to the phone app; the command carries the MediaMTX RTMP URL.</li>
+              <li>When the SDK stream-active notification arrives.</li>
+              <li>Connection state, keepalive messages, stream-status updates, and session termination.</li>
+              <li><strong>Full ingest startup:</strong> start-stream command to MediaMTX <code>readyTime</code>.</li>
+              <li><strong>SDK-to-MediaMTX gap:</strong> MediaMTX <code>readyTime</code> minus the observed SDK stream-active time. A positive value means the media server became ready after the SDK reported the stream as active.</li>
+            </ul>
+            <p class="gs-panel-note">Every event is timestamped with the workstation clock and written with the shared trial ID.</p>
+          </div>
+        </div>
+
+        <div class="gs-panel" id="panel-mediamtx">
+          <div class="gs-panel-main">
+            <h3 class="gs-panel-title" id="panel-mediamtx-title">MediaMTX <span class="gs-tag gs-tag--added">Monitored by GlassScope</span></h3>
+            <p>
+              The media server ingests the stream on the RTMP path <code>live/stream</code> and serves it to viewers. The
+              MediaMTX monitor, built into <code>server.py</code>, queries the MediaMTX HTTP management API every 2&nbsp;s.
+            </p>
+          </div>
+          <div class="gs-panel-records">
+            <h4 class="gs-panel-subtitle">What GlassScope records</h4>
+            <ul>
+              <li>Whether the stream is ready for viewers, and the API-reported <code>readyTime</code>.</li>
+              <li>Cumulative byte counters, and the ingest bitrate derived from changes between samples.</li>
+              <li>The number of active readers, meaning connected playback clients.</li>
+            </ul>
+            <p class="gs-panel-note"><code>readyTime</code> marks the server-side state change, so the 2&nbsp;s polling interval affects how quickly GlassScope notices readiness, not the timing resolution of <code>readyTime</code>. Samples carry the shared trial ID.</p>
+          </div>
+        </div>
+
+        <div class="gs-panel" id="panel-viewer">
+          <div class="gs-panel-main">
+            <h3 class="gs-panel-title" id="panel-viewer-title">Viewer <span class="gs-tag gs-tag--added">Logger added by GlassScope</span></h3>
+            <p>
+              Separate HLS and RTMP loggers open the stream with OpenCV’s <code>cv2.VideoCapture</code> and the FFmpeg backend,
+              and read each decoded frame’s position in the media timeline (<code>CAP_PROP_POS_MSEC</code>).
+            </p>
+          </div>
+          <div class="gs-panel-records">
+            <h4 class="gs-panel-subtitle">What GlassScope records</h4>
+            <ul>
+              <li>First-frame time.</li>
+              <li>Frame rate and frame-pacing jitter.</li>
+              <li>Freeze events, counted when consecutive decoded frames are more than 500&nbsp;ms apart.</li>
+              <li>The playback protocol, so HLS and RTMP sessions can be analyzed separately.</li>
+            </ul>
+            <p class="gs-panel-note">First-frame time starts at playlist open for HLS and at socket open for RTMP, so the two are reported separately rather than compared. Records carry the shared trial ID.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture (Figure 2). -->
+  <section class="section gs-band" id="architecture" aria-labelledby="architecture-title">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered" id="architecture-title">Architecture</h2>
+      <figure class="gs-figure gs-figure--image">
+        <a class="gs-figure-link" href="./static/images/glassscope-architecture.webp">
+          <picture>
+            <source type="image/webp"
+                    srcset="./static/images/glassscope-architecture-960.webp 960w, ./static/images/glassscope-architecture.webp 1920w"
+                    sizes="(min-width: 1024px) 960px, 100vw">
+            <img src="./static/images/glassscope-architecture-960.png"
+                 srcset="./static/images/glassscope-architecture-960.png 960w, ./static/images/glassscope-architecture.png 1920w"
+                 sizes="(min-width: 1024px) 960px, 100vw"
+                 width="1920" height="744" loading="lazy" decoding="async"
+                 alt="Figure 2, GlassScope workflow architecture (opens the full-size image)">
+          </picture>
+        </a>
+        <figcaption class="gs-caption">
+          GlassScope workflow architecture. The original firmware and phone-side stream controller remain unchanged;
+          GlassScope adds a local backend, MediaMTX monitor, player-side logger, and shared per-trial records.
+          <span class="gs-caption-source">Figure 2 of the paper, cropped and resized (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). <a href="./static/images/glassscope-architecture.webp" tabindex="-1">Open full size</a>.</span>
+        </figcaption>
+        <details class="gs-longdesc">
+          <summary>Text description of Figure 2</summary>
+          <p>Architecture diagram in four columns. Column 1, the original workflow stack, is unchanged: AI-glass firmware, the phone app and SDK stream controller, and the backend URL override EXPO_PUBLIC_BACKEND_URL_OVERRIDE, with no firmware changes. The app’s control is redirected to column 2, the protocol-compatible local backend, glasses_ws_server/server.py, which handles REST and WebSocket sessions, start_stream, keepalive and status updates, and writes timestamped backend events. start_stream carries the RTMP URL for column 3, media server instrumentation: MediaMTX with RTMP ingest path live/stream, HTTP API polling every 2 seconds, and readyTime, readiness, bitrate, bytes and readers. Its playback endpoint and media state feed column 4, the player and trial logger layer: an HLS or RTMP player, latency and playback measurements, a CSV log archive, and tables, figures and clean or error labels. Columns 2 to 4 write to a shared measurement surface: session timestamp and trial label, backend events, MediaMTX samples, player protocol, and derived latency metrics.</p>
+        </details>
+      </figure>
+
+      <div class="columns is-multiline gs-components">
+        <div class="column is-half">
+          <h3 class="gs-component-title">Local backend</h3>
+          <p>A protocol-compatible REST and WebSocket endpoint in <code>glasses_ws_server/server.py</code>. It sends <code>start_stream</code> with the RTMP URL, handles keepalive and status updates, and timestamps each event with the workstation clock.</p>
+        </div>
+        <div class="column is-half">
+          <h3 class="gs-component-title">MediaMTX monitor</h3>
+          <p>Built into <code>server.py</code>. Every 2&nbsp;s it records readiness, byte counters, the derived ingest bitrate, and active readers; when the stream becomes ready, it records the API-reported <code>readyTime</code>.</p>
+        </div>
+        <div class="column is-half">
+          <h3 class="gs-component-title">Player-side loggers</h3>
+          <p><code>bypass_viewer_hls.py</code> and <code>bypass_viewer.py</code> decode the stream with OpenCV and FFmpeg and log first-frame time, frame rate, frame-pacing jitter, and freezes.</p>
+        </div>
+        <div class="column is-half">
+          <h3 class="gs-component-title">Shared trial records</h3>
+          <p>A unique trial ID on every record joins four logs per trial: latency, performance, stream events, and player playback. Each trial is labeled clean, reconnect, bad-trigger, or failed.</p>
+        </div>
+      </div>
+      <p class="gs-unchanged">The MentraOS codebase is preserved, the glasses firmware is untouched, and the phone needs one environment variable. For instrumented runs, the local backend stands in for the MentraCloud backend, so measured downstream timing reflects this local path.</p>
+    </div>
+  </section>
+
+  <!-- Results (Table 3). -->
+  <section class="section" id="results" aria-labelledby="results-title">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered" id="results-title">Results</h2>
+      <p class="gs-lead gs-lead--wide">
+        Both GlassScope configurations use the same local backend and ingest path. In the evaluated setup, RTMP playback
+        showed lower live latency than HLS and froze in far fewer sessions (2/30 vs. 28/30).
+      </p>
+
+      <div class="columns gs-charts">
+        <div class="column is-half">
+          <figure class="gs-chart-figure">
+            <figcaption class="gs-chart-caption"><span class="gs-chart-letter">(a)</span> Live latency, mean ± SD (n = 30 each)</figcaption>
+            <svg class="gs-chart" viewBox="0 0 360 132" role="img" aria-labelledby="chart-latency-title" aria-describedby="chart-latency-desc">
+              <title id="chart-latency-title">Live latency, GlassScope + HLS vs. GlassScope + RTMP</title>
+              <desc id="chart-latency-desc">Mean live latency over 30 clean sessions each, with standard-deviation error bars. GlassScope plus HLS: 4,505 plus or minus 849 milliseconds. GlassScope plus RTMP: 2,575 plus or minus 599 milliseconds.</desc>
+              <g class="gs-chart-grid" aria-hidden="true">
+                <line x1="56.0" x2="56.0" y1="12" y2="94"/>
+                <line x1="134.7" x2="134.7" y1="12" y2="94"/>
+                <line x1="213.3" x2="213.3" y1="12" y2="94"/>
+                <line x1="292.0" x2="292.0" y1="12" y2="94"/>
+              </g>
+              <line class="gs-chart-axis" x1="56" x2="56" y1="12" y2="94" aria-hidden="true"/>
+              <g class="gs-chart-row" aria-hidden="true">
+                <title>GlassScope + HLS: 4,505 ± 849 ms</title>
+                <text class="gs-chart-cat" x="46" y="34" text-anchor="end" dominant-baseline="central">HLS</text>
+                <path class="gs-bar gs-bar--hls" d="M56 23.0H229.2A4 4 0 0 1 233.2 27.0V41.0A4 4 0 0 1 229.2 45.0H56Z"/>
+                <path class="gs-errbar" d="M199.8 34H266.6M199.8 29V39M266.6 29V39"/>
+                <text class="gs-chart-val" x="274.6" y="34" dominant-baseline="central">4,505 ± 849</text>
+              </g>
+              <g class="gs-chart-row" aria-hidden="true">
+                <title>GlassScope + RTMP: 2,575 ± 599 ms</title>
+                <text class="gs-chart-cat" x="46" y="72" text-anchor="end" dominant-baseline="central">RTMP</text>
+                <path class="gs-bar gs-bar--rtmp" d="M56 61.0H153.3A4 4 0 0 1 157.3 65.0V79.0A4 4 0 0 1 153.3 83.0H56Z"/>
+                <path class="gs-errbar" d="M133.7 72H180.8M133.7 67V77M180.8 67V77"/>
+                <text class="gs-chart-val" x="188.8" y="72" dominant-baseline="central">2,575 ± 599</text>
+              </g>
+              <g class="gs-chart-ticks" aria-hidden="true">
+                <text x="56.0" y="108" text-anchor="middle">0</text>
+                <text x="134.7" y="108" text-anchor="middle">2,000</text>
+                <text x="213.3" y="108" text-anchor="middle">4,000</text>
+                <text x="292.0" y="108" text-anchor="middle">6,000</text>
+              </g>
+              <text class="gs-chart-axis-title" x="174.0" y="128" text-anchor="middle" aria-hidden="true">Live latency (ms)</text>
+            </svg>
+          </figure>
+        </div>
+        <div class="column is-half">
+          <figure class="gs-chart-figure">
+            <figcaption class="gs-chart-caption"><span class="gs-chart-letter">(b)</span> Sessions with freezes (n = 30 each)</figcaption>
+            <svg class="gs-chart" viewBox="0 0 360 132" role="img" aria-labelledby="chart-freezes-title" aria-describedby="chart-freezes-desc">
+              <title id="chart-freezes-title">Sessions with freezes, GlassScope + HLS vs. GlassScope + RTMP</title>
+              <desc id="chart-freezes-desc">Number of sessions, out of 30 each, with at least one freeze. GlassScope plus HLS: 28 of 30. GlassScope plus RTMP: 2 of 30.</desc>
+              <g class="gs-chart-grid" aria-hidden="true">
+                <line x1="56.0" x2="56.0" y1="12" y2="94"/>
+                <line x1="134.7" x2="134.7" y1="12" y2="94"/>
+                <line x1="213.3" x2="213.3" y1="12" y2="94"/>
+                <line x1="292.0" x2="292.0" y1="12" y2="94"/>
+              </g>
+              <line class="gs-chart-axis" x1="56" x2="56" y1="12" y2="94" aria-hidden="true"/>
+              <g class="gs-chart-row" aria-hidden="true">
+                <title>GlassScope + HLS: 28 of 30 sessions froze</title>
+                <text class="gs-chart-cat" x="46" y="34" text-anchor="end" dominant-baseline="central">HLS</text>
+                <path class="gs-bar gs-bar--hls" d="M56 23.0H272.3A4 4 0 0 1 276.3 27.0V41.0A4 4 0 0 1 272.3 45.0H56Z"/>
+                <text class="gs-chart-val" x="284.3" y="34" dominant-baseline="central">28/30</text>
+              </g>
+              <g class="gs-chart-row" aria-hidden="true">
+                <title>GlassScope + RTMP: 2 of 30 sessions froze</title>
+                <text class="gs-chart-cat" x="46" y="72" text-anchor="end" dominant-baseline="central">RTMP</text>
+                <path class="gs-bar gs-bar--rtmp" d="M56 61.0H67.7A4 4 0 0 1 71.7 65.0V79.0A4 4 0 0 1 67.7 83.0H56Z"/>
+                <text class="gs-chart-val" x="79.7" y="72" dominant-baseline="central">2/30</text>
+              </g>
+              <g class="gs-chart-ticks" aria-hidden="true">
+                <text x="56.0" y="108" text-anchor="middle">0</text>
+                <text x="134.7" y="108" text-anchor="middle">10</text>
+                <text x="213.3" y="108" text-anchor="middle">20</text>
+                <text x="292.0" y="108" text-anchor="middle">30</text>
+              </g>
+              <text class="gs-chart-axis-title" x="174.0" y="128" text-anchor="middle" aria-hidden="true">Sessions with at least one freeze (of 30)</text>
+            </svg>
+          </figure>
+        </div>
+      </div>
+
+      <div class="columns gs-results-detail">
+        <div class="column is-7">
+          <div class="gs-table-wrap" tabindex="0" role="region" aria-labelledby="player-caption">
+            <table class="gs-table">
+              <caption id="player-caption">Player-side results over 30 clean sessions per configuration (mean ± SD; freezes count sessions with at least one freeze)</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Metric</th>
+                  <th scope="col" class="gs-num">GlassScope + HLS</th>
+                  <th scope="col" class="gs-num">GlassScope + RTMP</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Live latency (ms)</th>
+                  <td class="gs-num">4,505 ±&nbsp;849</td>
+                  <td class="gs-num">2,575 ±&nbsp;599</td>
+                </tr>
+                <tr>
+                  <th scope="row">Frame rate (fps)</th>
+                  <td class="gs-num">14.10 ±&nbsp;0.08</td>
+                  <td class="gs-num">14.72 ±&nbsp;0.02</td>
+                </tr>
+                <tr>
+                  <th scope="row">Sessions with freezes</th>
+                  <td class="gs-num">28/30</td>
+                  <td class="gs-num">2/30</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="column is-5">
+          <div class="gs-setup">
+            <h3 class="gs-setup-title" id="setup-title">Evaluation setup</h3>
+            <ul>
+              <li>90 clean sessions across three configurations, 30 per configuration.</li>
+              <li>One glasses–phone pair under fixed network conditions.</li>
+              <li>Error bars represent standard deviation.</li>
+              <li>Instrumented runs use the GlassScope local backend, so downstream timing reflects that path rather than the original MentraCloud backend.</li>
+            </ul>
+            <p>The original workflow has no player-side logger, so the charts compare the two GlassScope configurations.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="gs-narrow">
+      <h3 class="title is-4 gs-subhead" id="startup-title">Where startup time goes</h3>
+      <p class="gs-body">
+        SDK startup is close across all three configurations, around 2.8–2.9&nbsp;s, and it is all the original workflow
+        reports. With the local backend, GlassScope also records when MediaMTX becomes ready: full ingest startup is about
+        3.4–3.5&nbsp;s, roughly 0.6&nbsp;s after the SDK reports the stream as active.
+      </p>
+      <div class="gs-table-wrap" tabindex="0" role="region" aria-labelledby="startup-caption">
+        <table class="gs-table gs-table--startup" aria-describedby="startup-note">
+          <caption id="startup-caption">Startup timing in milliseconds, mean ± SD over 30 clean sessions per configuration</caption>
+          <thead>
+            <tr>
+              <th scope="col">Metric</th>
+              <th scope="col" class="gs-num">Original workflow</th>
+              <th scope="col" class="gs-num">GlassScope + HLS</th>
+              <th scope="col" class="gs-num">GlassScope + RTMP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">SDK startup</th>
+              <td class="gs-num">2,895 ±&nbsp;145</td>
+              <td class="gs-num">2,814 ±&nbsp;284</td>
+              <td class="gs-num">2,923 ±&nbsp;364</td>
+            </tr>
+            <tr>
+              <th scope="row">Full ingest startup</th>
+              <td class="gs-num gs-hidden-cell">hidden</td>
+              <td class="gs-num">3,411 ±&nbsp;212</td>
+              <td class="gs-num">3,515 ±&nbsp;368</td>
+            </tr>
+            <tr>
+              <th scope="row">SDK-to-MediaMTX gap</th>
+              <td class="gs-num gs-hidden-cell">hidden</td>
+              <td class="gs-num">597 ±&nbsp;89</td>
+              <td class="gs-num">592 ±&nbsp;72</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="gs-table-note" id="startup-note">
+        The original workflow uses the MentraCloud backend with HLS playback; <em>hidden</em> means the timing is unavailable
+        in its logs or APIs. Media-server timing uses the MediaMTX API-reported <code>readyTime</code>; the API is queried
+        every 2&nbsp;s.
+      </p>
+
+      <h3 class="title is-4 gs-subhead">What the logs show</h3>
+      <ul class="gs-findings">
+        <li>During HLS freezes, the MediaMTX logs show the ingest path still active and delivering data, so the freezes were not caused by the stream stopping upstream.</li>
+        <li>The two GlassScope configurations have nearly identical SDK-to-MediaMTX gaps and derived ingest bitrates (1,044 ± 3 vs. 1,046 ± 5 kbps), which places the playback differences after the common ingest path in this setup.</li>
+        <li>Those differences may also depend on protocol-specific buffering and player configuration, so the freeze incidence is not generalized beyond the evaluated setup.</li>
+        <li>First-frame delay is not compared across protocols: HLS is measured from playlist open and RTMP from socket open.</li>
+      </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reproduce. -->
+  <section class="section gs-band" id="reproduce" aria-labelledby="reproduce-title">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered" id="reproduce-title">Reproduce the experiments</h2>
+      <p class="gs-lead has-text-centered">The GlassScope repository hosts the measurement code, setup documentation, and evaluation logs.</p>
+      <ol class="gs-steps" role="list">
+        <li>
+          <h3 class="gs-step-title">Select a configuration</h3>
+          <p>Choose GlassScope + HLS or GlassScope + RTMP; this decides which player logger you run in step 4. Copy the configuration template <code>glasses_ws_server/.env.example</code> to <code>.env</code> in the same folder and set the backend URL, stream path, endpoints, and log paths.</p>
+        </li>
+        <li>
+          <h3 class="gs-step-title">Start the services</h3>
+          <p>Run MediaMTX, then start the local backend with <code>python3 server.py</code> from <code>glasses_ws_server/</code>. Its built-in monitor begins polling MediaMTX every 2&nbsp;s.</p>
+        </li>
+        <li>
+          <h3 class="gs-step-title">Configure the phone’s backend URL</h3>
+          <p>Set <code>EXPO_PUBLIC_BACKEND_URL_OVERRIDE</code> to the workstation’s backend address so the phone app connects to the local backend. This is the only phone-side change.</p>
+        </li>
+        <li>
+          <h3 class="gs-step-title">Run a trial</h3>
+          <p>Connect the glasses in the phone app; the backend then sends <code>start_stream</code> with the MediaMTX RTMP URL automatically. Open the stream with the matching HLS or RTMP player logger. Clean sessions in the paper stream for 3 minutes before teardown.</p>
+        </li>
+        <li>
+          <h3 class="gs-step-title">Collect correlated logs</h3>
+          <p>Each trial writes latency, performance, stream-event, and player logs that share one trial ID. Each trial is labeled clean, reconnect, bad-trigger, or failed; the results use clean sessions only.</p>
+        </li>
+      </ol>
+      <div class="gs-step-links has-text-centered">
+        <span class="link-block">
+          <a href="https://github.com/raoafariak-sys/GlassScope/blob/main/STARTUP_GUIDE_BYPASS.txt" class="button is-normal is-rounded is-dark">
+            <span class="icon"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-book"></use></svg></span>
+            <span>Read the setup guide</span>
+          </a>
+        </span>
+        <span class="link-block">
+          <a href="https://github.com/raoafariak-sys/GlassScope/tree/main/evaluation_logs" class="button is-normal is-rounded is-dark">
+            <span class="icon"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-database"></use></svg></span>
+            <span>Browse the evaluation logs</span>
+          </a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Citation. -->
+  <section class="section" id="BibTeX" aria-labelledby="bibtex-title">
+    <div class="container is-max-desktop">
+      <div class="gs-bibtex-head">
+        <h2 class="title is-3" id="bibtex-title">BibTeX</h2>
+        <button type="button" class="button is-small is-rounded gs-copy" data-copy-target="bibtex-code" data-copy-status="bibtex-status" hidden>
+          <span class="icon is-small"><svg class="gs-btn-icon" aria-hidden="true" focusable="false"><use href="#i-copy"></use></svg></span>
+          <span data-copy-label>Copy</span><span class="is-sr-only"> BibTeX</span>
+        </button>
+      </div>
+      <pre class="gs-bibtex" tabindex="0" role="region" aria-label="BibTeX citation"><code id="bibtex-code">@inproceedings{karim2026glassscope,
+  author    = {Karim, Raoa Faria and Cobio, John and Bai, Songling and Li, Wei and Li, Yingshu and Li, Ming},
+  title     = {{GlassScope}: An Open-Source Measurement Layer for {AI}-Glass Live Streaming},
+  booktitle = {The 4th ACM Workshop on Mobile Immersive Computing, Networking, and Systems (ImmerCom '26)},
+  series    = {ImmerCom '26},
+  year      = {2026},
+  location  = {Austin, TX, USA},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  numpages  = {7},
+  isbn      = {979-8-4007-2973-7},
+  doi       = {10.1145/3842656.3843829},
+  url       = {https://doi.org/10.1145/3842656.3843829}
+}</code></pre>
+      <p class="gs-copy-status" id="bibtex-status" role="status" aria-live="polite"></p>
+      <!-- Make the DOI a link once https://doi.org/10.1145/3842656.3843829 resolves (it returned 404 on 2026-10-08). -->
+      <p class="gs-doi">DOI: 10.1145/3842656.3843829 <span class="gs-doi-note">(it will resolve once ACM publishes the ImmerCom ’26 proceedings)</span></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-10">
+        <div class="content has-text-centered gs-footer">
+          <p>
+            Except where noted below, this website is licensed under a
+            <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+            Attribution-ShareAlike 4.0 International License</a>. It is adapted from the
+            <a href="https://nerfies.github.io">Nerfies</a> project page
+            (<a href="https://github.com/nerfies/nerfies.github.io">source code</a>).
+          </p>
+          <p>
+            The abstract and figures come from Karim et al., “GlassScope: An Open-Source Measurement Layer for
+            AI-Glass Live Streaming,” ImmerCom ’26, © 2026 the authors, licensed under
+            <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Figure 1 is redrawn and Figure 2 is
+            cropped and resized. Icons from <a href="https://fontawesome.com/license/free">Font Awesome Free</a>
+            (CC BY 4.0). Fonts: Google Sans Flex and Noto Sans (SIL Open Font License 1.1).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
